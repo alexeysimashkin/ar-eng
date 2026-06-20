@@ -1,8 +1,8 @@
 :root {
-  --navy: #1B2A4A;
-  --navy-dark: #0F1B33;
-  --navy-light: #3B5998;
-  --navy-bg: #E8EDF5;
+  --navy: #4169E1;
+  --navy-dark: #3558C7;
+  --navy-light: #6B8FF5;
+  --navy-bg: #E8EDFB;
   --white: #FFFFFF;
   --gray-50: #F8FAFC;
   --gray-100: #F1F5F9;
@@ -28,7 +28,7 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background: #EEF1F7;
+  background: #F0F3FA;
   color: var(--gray-800);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -53,9 +53,7 @@ body {
   transition: all 0.3s;
 }
 
-.airport-banner.closed {
-  background: var(--red);
-}
+.airport-banner.closed { background: var(--red); }
 
 /* HEADER */
 .header {
@@ -79,7 +77,7 @@ body {
   font-size: 16px;
   text-decoration: none;
   transition: all 0.2s;
-  border: 1px solid rgba(27,42,74,0.2);
+  border: 1px solid rgba(65,105,225,0.2);
 }
 
 .home-btn:hover { background: var(--navy); color: white; }
@@ -90,7 +88,7 @@ body {
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   color: white; font-size: 18px;
-  box-shadow: 0 4px 14px rgba(59,89,152,0.4);
+  box-shadow: 0 4px 14px rgba(107,143,245,0.4);
 }
 
 .header-info h1 { font-size: 16px; font-weight: 800; color: var(--gray-800); }
@@ -100,7 +98,7 @@ body {
   background: linear-gradient(135deg, var(--navy-light), var(--navy));
   color: white; font-weight: 900; font-size: 18px;
   padding: 6px 16px; border-radius: 30px; letter-spacing: 3px;
-  box-shadow: 0 4px 18px rgba(59,89,152,0.4);
+  box-shadow: 0 4px 18px rgba(107,143,245,0.4);
 }
 
 .header-right { display: flex; align-items: center; gap: 12px; }
@@ -108,7 +106,7 @@ body {
 .refund-btn {
   background: var(--navy-bg);
   color: var(--navy);
-  border: 1px solid rgba(27,42,74,0.2);
+  border: 1px solid rgba(65,105,225,0.2);
   padding: 8px 14px;
   border-radius: 25px;
   font-weight: 600;
@@ -171,7 +169,7 @@ body {
   margin-bottom: 16px;
   transition: all 0.2s;
   font-family: 'Inter', sans-serif;
-  box-shadow: 0 4px 14px rgba(27,42,74,0.3);
+  box-shadow: 0 4px 14px rgba(65,105,225,0.3);
 }
 
 .admin-toggle-btn:hover { background: var(--navy-dark); transform: translateY(-2px); }
@@ -230,13 +228,13 @@ body {
   padding: 10px 18px; border-radius: 25px; font-weight: 600; font-size: 13px;
   cursor: pointer; display: flex; align-items: center; gap: 6px;
   transition: all 0.2s; font-family: 'Inter', sans-serif;
-  box-shadow: 0 2px 10px rgba(27,42,74,0.25);
+  box-shadow: 0 2px 10px rgba(65,105,225,0.25);
 }
 
 .btn-primary:hover { background: var(--navy-dark); transform: translateY(-1px); }
 
 .form-card {
-  background: var(--navy-bg); border: 1px solid rgba(27,42,74,0.15);
+  background: var(--navy-bg); border: 1px solid rgba(65,105,225,0.15);
   border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px;
 }
 
@@ -255,7 +253,7 @@ body {
   transition: all 0.2s; background: white;
 }
 
-.field input:focus, .field select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(27,42,74,0.08); }
+.field input:focus, .field select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(65,105,225,0.08); }
 
 .form-actions { display: flex; gap: 8px; margin-top: 14px; }
 
@@ -272,7 +270,7 @@ body {
   transition: all 0.2s; flex-wrap: wrap; gap: 8px;
 }
 
-.admin-row:hover { background: var(--navy-bg); border-color: rgba(27,42,74,0.25); }
+.admin-row:hover { background: var(--navy-bg); border-color: rgba(65,105,225,0.25); }
 .admin-row-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .admin-row-number { font-weight: 800; color: var(--navy); font-size: 14px; }
 .admin-row-route { color: var(--gray-600); font-size: 13px; }
