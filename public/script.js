@@ -43,24 +43,42 @@ function fmtDateOnly(s) {
   return `${d.getDate()} ${months[d.getMonth()]}`;
 }
 
-// Баннер аэропорта
-$('btnAirportClosed').addEventListener('click', () => {
-  airportClosed = true;
-  $('airportBanner').classList.add('closed');
-  $('airportBannerText').textContent = 'Аэропорт закрыт';
-  $('airportBanner').innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span id="airportBannerText">Аэропорт закрыт</span>';
-  $('btnAirportClosed').style.display = 'none';
-  $('btnAirportOpen').style.display = 'flex';
-});
+// Загрузка статуса аэропорта с сервера
+async function loadAirportStatus() {
+  try {
+    const r = await fetch('/api/airport-status');
+    const data = await r.json();
+    updateBanner(data.status);
+  } catch(e) {}
+}
 
-$('btnAirportOpen').addEventListener('click', () => {
-  airportClosed = false;
-  $('airportBanner').classList.remove('closed');
-  $('airportBannerText').textContent = 'Аэропорт открыт';
-  $('airportBanner').innerHTML = '<i class="fas fa-check-circle"></i> <span id="airportBannerText">Аэропорт открыт</span>';
-  $('btnAirportOpen').style.display = 'none';
-  $('btnAirportClosed').style.display = 'flex';
-});
+function updateBanner(status) {
+  airportClosed = status === 'closed';
+  const banner = $('airportBanner');
+  if (airportClosed) {
+    banner.classList.add('closed');
+    banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <span id="airportBannerText">Аэропорт закрыт</span>';
+    $('btnAirportClosed').style.display = 'none';
+    $('btnAirportOpen').style.display = 'flex';
+  } else {
+    banner.classList.remove('closed');
+    banner.innerHTML = '<i class="fas fa-check-circle"></i> <span id="airportBannerText">Аэропорт открыт</span>';
+    $('btnAirportOpen').style.display = 'none';
+    $('btnAirportClosed').style.display = 'flex';
+  }
+}
+
+async function setAirportStatus(status) {
+  await fetch('/api/airport-status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  updateBanner(status);
+}
+
+$('btnAirportClosed').addEventListener('click', () => setAirportStatus('closed'));
+$('btnAirportOpen').addEventListener('click', () => setAirportStatus('open'));
 
 document.querySelectorAll('.main-tab').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -221,7 +239,7 @@ function renderFlightRowArr(f) {
     <td><div class="dest-cell"><span class="dest-name">${f.destination}</span><span class="dest-iata">${f.iataCode || ''}</span></div></td>
     <td class="flight-num">${f.flightNumber}</td>
     <td><div class="airline-cell"><div class="airline-avatar">${(f.airline || 'A').charAt(0)}</div>${f.airline || ''}</div></td>
-    <td><span class="gate-cell">${f.boardingGate || '—'}</span></td>
+    <td><span class="gate-cell">${f.baggageBelt || '—'}</span></td>
     <td><span class="status-tag ${getTagClassArr(f)}">${(f.statusText || 'По расписанию').replace(/\n/g,'<br>')}</span></td>
   </tr>`;
 }
@@ -286,10 +304,6 @@ window.showDetail = function(id, type) {
   const delayHtml = (delayed || early) ? `<div class="modal-delay-banner"><i class="fas fa-clock"></i><span>${early ? 'Ранний вылет' : 'Задержан до ' + fmtTm(f.expectedDeparture)}</span></div>` : '';
   
   const tagClass = type === 'departure' ? getTagClass(f) : getTagClassArr(f);
-  
-  const doneCheckIn = ['checkin_completed','boarding','boarding_completed','departed','early_departed'].includes(f.computedStatus);
-  const activeBoarding = ['boarding','boarding_completed'].includes(f.computedStatus);
-  
   const isDeparture = type === 'departure';
   
   $('modalBody').innerHTML = `
@@ -308,52 +322,16 @@ window.showDetail = function(id, type) {
     <div class="modal-fs-info-row"><span>Россия</span></div>
     <div class="modal-fs-table">
       <div class="modal-fs-table-row header">
-        <div>Дата</div><div>Время по расписанию</div><div>Ожидаемое время</div><div>Выход</div><div>Терминал</div>
+        <div>Дата</div><div>Время по расписанию</div><div>Ожидаемое время</div><div>${isDeparture ? 'Выход' : 'Лента'}</div><div>Терминал</div>
       </div>
       <div class="modal-fs-table-row">
         <div><strong>${fmtDateOnly(f.scheduledDeparture)}</strong></div>
         <div><strong>${fmtTm(f.scheduledDeparture)}</strong></div>
         <div><strong>${fmtTm(f.expectedDeparture || f.scheduledDeparture)}</strong></div>
-        <div><strong>${f.boardingGate || '—'}</strong></div>
+        <div><strong>${isDeparture ? (f.boardingGate || '—') : (f.baggageBelt || '—')}</strong></div>
         <div><strong>А</strong></div>
       </div>
     </div>
-    ${isDeparture ? `
-    <div class="modal-fs-timeline">
-      <h3>Регистрация и посадка</h3>
-      <div class="timeline-items">
-        <div class="timeline-item ${doneCheckIn ? 'done' : ''}">
-          <div class="timeline-dot"></div>
-          <div class="timeline-content">
-            <div class="timeline-time">${fmtTm(f.checkInStart)}</div>
-            <div class="timeline-label">Начало регистрации${f.checkInCounters ? ' • Стойки ' + f.checkInCounters : ''}</div>
-          </div>
-        </div>
-        <div class="timeline-item ${doneCheckIn ? 'done' : ''}">
-          <div class="timeline-dot"></div>
-          <div class="timeline-content">
-            <div class="timeline-time">${fmtTm(f.checkInEnd)}</div>
-            <div class="timeline-label">Окончание регистрации</div>
-          </div>
-        </div>
-        ${f.boardingStart ? `
-        <div class="timeline-item ${activeBoarding ? 'active' : ''}">
-          <div class="timeline-dot"></div>
-          <div class="timeline-content">
-            <div class="timeline-time">${fmtTm(f.boardingStart)}</div>
-            <div class="timeline-label">Начало посадки${f.boardingGate ? ' • Выход ' + f.boardingGate : ''}</div>
-          </div>
-        </div>
-        ${f.boardingEnd ? `
-        <div class="timeline-item">
-          <div class="timeline-dot"></div>
-          <div class="timeline-content">
-            <div class="timeline-time">${fmtTm(f.boardingEnd)}</div>
-            <div class="timeline-label">Окончание посадки</div>
-          </div>
-        </div>` : ''}` : ''}
-      </div>
-    </div>` : ''}
     <div class="modal-fs-extra">
       <div class="modal-fs-extra-item"><span class="extra-label">Авиакомпания</span><span class="extra-value">${f.airline || '—'}</span></div>
       <div class="modal-fs-extra-item"><span class="extra-label">По расписанию</span><span class="extra-value">${fmtDt(f.scheduledDeparture)}</span></div>
@@ -362,7 +340,9 @@ window.showDetail = function(id, type) {
       <div class="modal-fs-extra-item"><span class="extra-label">Регистрация</span><span class="extra-value">${fmtTm(f.checkInStart)} — ${fmtTm(f.checkInEnd)}</span></div>
       <div class="modal-fs-extra-item"><span class="extra-label">Посадка</span><span class="extra-value">${fmtTm(f.boardingStart)} — ${fmtTm(f.boardingEnd)}</span></div>
       <div class="modal-fs-extra-item"><span class="extra-label">Стойки</span><span class="extra-value">${f.checkInCounters || '—'}</span></div>
-      ` : ''}
+      ` : `
+      <div class="modal-fs-extra-item"><span class="extra-label">Лента выдачи багажа</span><span class="extra-value">${f.baggageBelt || '—'}</span></div>
+      `}
     </div>`;
 
   $('modalOverlay').classList.add('show');
@@ -487,6 +467,7 @@ window.editFlightArr = function(id) {
   $('iataCodeArr').value = f.iataCode || '';
   $('scheduledDepartureArr').value = f.scheduledDeparture ? f.scheduledDeparture.slice(0, 16) : '';
   $('expectedDepartureArr').value = f.expectedDeparture ? f.expectedDeparture.slice(0, 16) : '';
+  $('baggageBeltArr').value = f.baggageBelt || '';
   $('statusArr').value = f.status;
   $('flightFormArr').style.display = 'block';
 };
@@ -506,6 +487,7 @@ $('flightFormInnerArr').onsubmit = async function(e) {
     iataCode: $('iataCodeArr').value.toUpperCase(),
     scheduledDeparture: $('scheduledDepartureArr').value ? $('scheduledDepartureArr').value + ':00' : null,
     expectedDeparture: $('expectedDepartureArr').value ? $('expectedDepartureArr').value + ':00' : null,
+    baggageBelt: $('baggageBeltArr').value,
     status: $('statusArr').value
   };
   const url = editingId ? `${API}/${editingId}?type=arrival` : `${API}?type=arrival`;
@@ -520,5 +502,6 @@ setInterval(() => {
   else loadArr();
 }, 30000);
 
+loadAirportStatus();
 loadDep();
 loadArr();
