@@ -12,6 +12,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 pool.query(`CREATE TABLE IF NOT EXISTS departures (id TEXT PRIMARY KEY, data JSONB NOT NULL)`).catch(e => console.log(e));
 pool.query(`CREATE TABLE IF NOT EXISTS arrivals (id TEXT PRIMARY KEY, data JSONB NOT NULL)`).catch(e => console.log(e));
+pool.query(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`).catch(e => console.log(e));
 
 async function load(table) {
   try { const r = await pool.query(`SELECT data FROM ${table}`); return r.rows.map(x => x.data); }
@@ -24,6 +25,17 @@ async function saveOne(f, table) {
 
 async function deleteOne(id, table) {
   await pool.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+}
+
+async function getSetting(key) {
+  try {
+    const r = await pool.query(`SELECT value FROM settings WHERE key = $1`, [key]);
+    return r.rows[0]?.value || 'open';
+  } catch(e) { return 'open'; }
+}
+
+async function setSetting(key, value) {
+  await pool.query(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2`, [key, value]);
 }
 
 function getLocalNow() {
@@ -117,6 +129,17 @@ function getFlightDay(f) {
   return 'today';
 }
 
+app.get('/api/airport-status', async (req, res) => {
+  const status = await getSetting('airport_status');
+  res.json({ status });
+});
+
+app.post('/api/airport-status', async (req, res) => {
+  const { status } = req.body;
+  await setSetting('airport_status', status);
+  res.json({ status });
+});
+
 app.get('/api/flights', async (req, res) => {
   const type = req.query.type || 'departure';
   const table = type === 'departure' ? 'departures' : 'arrivals';
@@ -143,7 +166,7 @@ app.get('/api/flights', async (req, res) => {
 app.post('/api/flights', async (req, res) => {
   const type = req.query.type || 'departure';
   const table = type === 'departure' ? 'departures' : 'arrivals';
-  const f = { id: Date.now().toString(), flightNumber: req.body.flightNumber || '', destination: req.body.destination || '', iataCode: req.body.iataCode || '', airline: req.body.airline || '', scheduledDeparture: req.body.scheduledDeparture || null, expectedDeparture: req.body.expectedDeparture || null, checkInStart: req.body.checkInStart || null, checkInEnd: req.body.checkInEnd || null, checkInCounters: req.body.checkInCounters || '', boardingStart: req.body.boardingStart || null, boardingEnd: req.body.boardingEnd || null, boardingGate: req.body.boardingGate || '', status: req.body.status || 'scheduled' };
+  const f = { id: Date.now().toString(), flightNumber: req.body.flightNumber || '', destination: req.body.destination || '', iataCode: req.body.iataCode || '', airline: req.body.airline || '', scheduledDeparture: req.body.scheduledDeparture || null, expectedDeparture: req.body.expectedDeparture || null, checkInStart: req.body.checkInStart || null, checkInEnd: req.body.checkInEnd || null, checkInCounters: req.body.checkInCounters || '', boardingStart: req.body.boardingStart || null, boardingEnd: req.body.boardingEnd || null, boardingGate: req.body.boardingGate || '', baggageBelt: req.body.baggageBelt || '', status: req.body.status || 'scheduled' };
   await saveOne(f, table);
   res.status(201).json(f);
 });
